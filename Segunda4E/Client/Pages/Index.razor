@@ -1,0 +1,146 @@
+﻿@page "/"
+
+<PageTitle>Productos</PageTitle>
+
+<h1>Productos</h1>
+
+@if (error)
+{
+    <div class="alert alert-danger" role="alert">
+        El número de inventario se encuentra registrado
+    </div>
+}
+<EditForm Model="elproducto" OnValidSubmit="Guardar">
+    <DataAnnotationsValidator />
+    <div class="mb-3 row">
+        <label for="txtId" class="col-sm-2 col-form-label">No. inventario</label>
+        <div class="col-sm-10">
+            <InputNumber id="txtId" class="form-control" @bind-Value="elproducto.Id" readonly="@modificar"></InputNumber>
+            <ValidationMessage For="@(()=>elproducto.Id)" />
+        </div>
+    </div>
+    <div class="mb-3 row">
+        <label for="txtNombre" class="col-sm-2 col-form-label">Nombre</label>
+        <div class="col-sm-10">
+            <InputText id="txtNombre" class="form-control" @bind-Value="elproducto.Nombre"></InputText>
+            <ValidationMessage For="@(()=>elproducto.Nombre)" />
+        </div>
+    </div>
+    <div class="mb-3 row">
+        <label for="txtDepartamento" class="col-sm-2 col-form-label">Departamento</label>
+        <div class="col-sm-10">
+            <InputRadioGroup @bind-Value="elproducto.Departamento">
+                <label><InputRadio Value="1"></InputRadio>Frutas</label>
+                <label><InputRadio Value="2"></InputRadio>Verduras</label>
+                <label><InputRadio Value="3"></InputRadio>Lácteos</label>
+            </InputRadioGroup>
+            <ValidationMessage For="@(()=>elproducto.Departamento)" />
+        </div>
+    </div>
+    <div class="mb-3">
+        <button class="btn btn-primary" type="submit">Guardar</button>
+        @if (modificar)
+        {
+            <button class="btn btn-danger" @onclick="Cancelar">Cancelar</button>
+        }
+    </div>
+</EditForm>
+
+@if (existencias)
+{
+    <button class="btn btn-secondary" @onclick="Listado">Listado</button>
+    <table class="table table-striped">
+        <tr>
+            <th>Frutas</th>
+            <th>Verduras</th>
+            <th>Lácteos</th>
+        </tr>
+        <tr>
+            <td>@productos.Where(r=>r.Departamento==1).Count()</td>
+            <td>@productos.Where(r=>r.Departamento==2).Count()</td>
+            <td>@productos.Where(r=>r.Departamento==3).Count()</td>
+        </tr>
+    </table>
+}
+else if (productos.Count > 0)
+{
+    <button class="btn btn-secondary" @onclick="Existencias">Existencias</button>
+    <table class="table table-striped">
+        <tr>
+            <th>Inventario</th>
+            <th>Nombre</th>
+            <th>Departamento</th>
+            <th>Acciones</th>
+        </tr>
+        @foreach (Producto producto in productos)
+        {
+            <tr>
+                <td>@producto.Id</td>
+                <td>@producto.Nombre</td>
+                <td>@((producto.Departamento == 1) ? "Frutas" : (producto.Departamento == 2) ? "Verduras" : "Lácteos")</td>
+                <td>
+                    <button class="btn" @onclick="(()=>Eliminar(producto))"><span class="oi oi-trash"></span></button>
+                    <button class="btn" @onclick="()=>Modificar(producto)"><span class="oi oi-pencil"></span></button>
+                </td>
+            </tr>
+        }
+    </table>
+}
+
+@code {
+    private Producto elproducto = new();
+    private List<Producto> productos = new();
+    private bool error = false, modificar = false, existencias = false;
+    private int idModificar = 0;
+
+    private void Guardar()
+    {
+        if (modificar)
+        {
+            var indexProducto = productos.FindIndex(r => r.Id == idModificar);
+            productos[indexProducto] = elproducto;
+            Cancelar();
+        }
+        else if (productos.Any(r => r.Id == elproducto.Id))
+        {
+            error = true;
+        }
+        else
+        {
+            error = false;
+            productos.Add(elproducto);
+            elproducto = new();
+        }
+    }
+
+    private void Eliminar(Producto producto)
+    {
+        productos.Remove(producto);
+    }
+
+    private void Modificar(Producto producto)
+    {
+        elproducto.Id = producto.Id;
+        elproducto.Nombre = producto.Nombre;
+        elproducto.Departamento = producto.Departamento;
+        idModificar = producto.Id;
+        modificar = true;
+    }
+
+    private void Cancelar()
+    {
+        idModificar = 0;
+        modificar = false;
+        elproducto = new();
+    }
+
+    private void Existencias()
+    {
+        existencias = true;
+    }
+
+    private void Listado()
+    {
+        existencias = false;
+    }
+}
